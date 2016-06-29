@@ -49,6 +49,7 @@ class ViewController: UIViewController {
         displayValue = 0;
         decimalIsPressed = false
         userIsInTheMiddleOfTyping = false
+        descriptionOfOperandsAndOperations.text = ""
         brain = CalculatorBrain()
     }
     
@@ -67,6 +68,7 @@ class ViewController: UIViewController {
         if let mathematicalSymbol = sender.currentTitle {
             brain.performOperation(mathematicalSymbol)
             descriptionOfOperandsAndOperations.text = brain.returnDescription()
+            brain.addToDescription(mathematicalSymbol)
         }
         displayValue = brain.result
     }
