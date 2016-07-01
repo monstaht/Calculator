@@ -14,6 +14,8 @@ class CalculatorBrain{
     private var accumulator = 0.0
     private var description = "" //string which holds all the operations and operands done
     private var pending: PendingBinaryOperationInfo? //Holds information for a pending Binary Operation
+    private var internalProgram = [AnyObject]()
+    typealias PropertyList = AnyObject
     
     /* computed variable which looks at if a pending binary operation exists then partialResult will
      be true
@@ -29,11 +31,37 @@ class CalculatorBrain{
         }
     }
     
+    var program: PropertyList {
+        get{
+            return internalProgram
+        }
+        set{
+            clear()
+            if let arrayOfOps = newValue as? [AnyObject]{
+                for op in arrayOfOps{
+                    if let operand = op as? Double {
+                        setOperand(operand)
+                    }
+                    if let operation = op as? String{
+                        performOperation(operation)
+                    }
+                }
+            }
+        }
+    }
+    
+    func clear(){
+        accumulator = 0.0
+        pending = nil
+        internalProgram.removeAll()
+    }
+    
     /* sets the operand to the accumulator
      */
     func setOperand(operand: Double){
         //addToDescription(String(operand))
         accumulator = operand
+        internalProgram.append(operand)
     }
     
     /* public variable to get accumulator since we dont want it to be set
@@ -65,6 +93,7 @@ class CalculatorBrain{
     /* Performs the operation based on which type of opeartion it is
      */
     func performOperation(symbol: String) {
+        internalProgram.append(symbol)
         if let operation = operations[symbol]{
             switch operation {
             case .Constant(let value):

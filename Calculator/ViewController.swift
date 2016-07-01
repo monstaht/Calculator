@@ -15,6 +15,7 @@ class ViewController: UIViewController {
     private var userIsInTheMiddleOfTyping = false;
     private var decimalIsPressed = false;
     private var brain = CalculatorBrain();
+    private var savedProgram: CalculatorBrain.PropertyList?
     private var displayValue: Double {
         get {
             return Double(display.text!)!
@@ -50,7 +51,7 @@ class ViewController: UIViewController {
         decimalIsPressed = false
         userIsInTheMiddleOfTyping = false
         descriptionOfOperandsAndOperations.text = ""
-        brain = CalculatorBrain()
+        brain.clear()
     }
     
     
@@ -72,6 +73,20 @@ class ViewController: UIViewController {
         }
         displayValue = brain.result
     }
+    
+    @IBAction func save() {
+        savedProgram = brain.program
+    }
+    
+    
+    @IBAction func restore() {
+        if savedProgram != nil{
+            brain.program = savedProgram!
+            displayValue = brain.result
+        }
+    }
+    
+    
     
     /* This is the function which places a digit or decimal
         on the display. If userInTheMiddleOfTyping then add
