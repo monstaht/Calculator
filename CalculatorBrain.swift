@@ -14,9 +14,13 @@ class CalculatorBrain{
     private var accumulator = 0.0
     private var description = "" //string which holds all the operations and operands done
     private var pending: PendingBinaryOperationInfo? //Holds information for a pending Binary Operation
-    private var internalProgram = [AnyObject]()
+    private var internalProgram = [AnyObject]() //Holds the stored variable as a number not a string
     typealias PropertyList = AnyObject
+    private var internalVariable = ""
+    private var operandTypedIn = false //lets the brain know if an operand was typed in
     
+    
+
     /* computed variable which looks at if a pending binary operation exists then partialResult will
      be true
      */
@@ -31,6 +35,8 @@ class CalculatorBrain{
         }
     }
     
+    /* all the stuff that has happened in the program 
+     */
     var program: PropertyList {
         get{
             return internalProgram
@@ -50,18 +56,33 @@ class CalculatorBrain{
         }
     }
     
+    /* clears the calculator
+     */
     func clear(){
         accumulator = 0.0
         pending = nil
         internalProgram.removeAll()
+        description = ""
+        variableValues.removeAll()
     }
     
     /* sets the operand to the accumulator
      */
     func setOperand(operand: Double){
-        //addToDescription(String(operand))
         accumulator = operand
         internalProgram.append(operand)
+        addOperandToDescription(String(operand))
+        operandTypedIn =  true
+    }
+    
+    /* Sets a variable value to the most recent accumulator value NOT DONE
+     */
+    func setOperand(variableName: String){
+        if let operand = variableValues[variableName]{
+            accumulator = operand
+            internalProgram.append(operand)
+        }
+
     }
     
     /* public variable to get accumulator since we dont want it to be set
@@ -72,25 +93,20 @@ class CalculatorBrain{
         }
         
     }
-
-    /* adds on to the description
-    */
-    func addToDescription(s: String){
-        description += s
-    }
     
     /* gives back the description based on value of isPartialResult
-    */
+     */
     func returnDescription() -> String{
         if isPartialResult {
             return description + "..."
         }
         else{
-            return description
+            return description + "="
         }
     }
     
-    /* Performs the operation based on which type of opeartion it is
+    
+    /* Performs the operation based on which type of opeartion it is and also appends items to description
      */
     func performOperation(symbol: String) {
         internalProgram.append(symbol)
@@ -98,16 +114,70 @@ class CalculatorBrain{
             switch operation {
             case .Constant(let value):
                 accumulator = value
+                description += symbol
+                operandTypedIn = true
             case .UnaryOperator(let function):
                 accumulator = function(accumulator)
+                descriptionForUnaryOperator(symbol)
             case .BinaryOperator(let function):
                 executePendingBinaryOperation()
                 pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
+                description += symbol
+                operandTypedIn = false
             case .Equals:
                 executePendingBinaryOperation()
+                if !operandTypedIn {
+                    addOperandToDescription(String(accumulator))
+                    operandTypedIn = true
+                }
             }
         }
     }
+    
+    /* a dictionary that mathces a variable with a Double
+     */
+    var variableValues: [String: Double] = [:]
+    
+    /* adds an operand to the description
+     */
+    private func addOperandToDescription(operand: String) -> String {
+        var returningOperand = operand
+        //if this string is double with .0 just display an int
+        if let double  = Double(operand) {
+            if double % 1 == 0 {
+                returningOperand =  (String(Int(double)))
+            }
+        }
+        if isPartialResult{
+            description += returningOperand
+        }
+        else{
+            description = returningOperand
+        }
+        return returningOperand
+    }
+    
+
+    /* edit description for a unary operator according to is partial result and if an operand is typed in
+     */
+    private func descriptionForUnaryOperator(symbol: String){
+        if isPartialResult{
+            //add the unary operator to the last operand put in
+            description = description.substringWithRange(description.startIndex..<description.endIndex.predecessor()) +
+                symbol + "(" + description.substringFromIndex(description.endIndex.predecessor()) + ")"
+        }
+        else{
+            //add the unary operator to the whole description
+            if !operandTypedIn {
+                description = symbol + "(" + addOperandToDescription(String(accumulator)) +  ")"
+                operandTypedIn = true
+            }
+            else{
+                description = symbol + "(" + description + ")"
+            }
+        }
+    }
+
     
     /* execute the binary operation which is wating for the second opearnd
      */
@@ -117,6 +187,7 @@ class CalculatorBrain{
             pending = nil;
         }
     }
+    
 
     /* a dictionary that matches the string with an operation
     */

@@ -69,19 +69,19 @@ class ViewController: UIViewController {
         if let mathematicalSymbol = sender.currentTitle {
             brain.performOperation(mathematicalSymbol)
             descriptionOfOperandsAndOperations.text = brain.returnDescription()
-            brain.addToDescription(mathematicalSymbol)
         }
         displayValue = brain.result
     }
     
     @IBAction func save() {
+        brain.variableValues["M"] = displayValue
         savedProgram = brain.program
     }
     
     
     @IBAction func restore() {
         if savedProgram != nil{
-            brain.program = savedProgram!
+            brain.setOperand("M")
             displayValue = brain.result
         }
     }
@@ -102,7 +102,6 @@ class ViewController: UIViewController {
             display.text = sender.currentTitle!
             userIsInTheMiddleOfTyping = true;
         }
-        brain.addToDescription(sender.currentTitle!)
     }
     
 
