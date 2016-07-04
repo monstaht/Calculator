@@ -113,23 +113,27 @@ class CalculatorBrain{
         if let operation = operations[symbol]{
             switch operation {
             case .Constant(let value):
+                addOperationToDescription(symbol, closure: {
+                    self.description += $0
+                    self.operandTypedIn = true
+                })
                 accumulator = value
-                description += symbol
-                operandTypedIn = true
             case .UnaryOperator(let function):
+                addOperationToDescription(symbol, closure: {self.descriptionForUnaryOperation($0)})
                 accumulator = function(accumulator)
-                descriptionForUnaryOperator(symbol)
             case .BinaryOperator(let function):
+                addOperationToDescription(symbol, closure: {
+                    self.description += $0
+                    self.operandTypedIn = false
+                })
                 executePendingBinaryOperation()
                 pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
-                description += symbol
-                operandTypedIn = false
             case .Equals:
+                addOperationToDescription(symbol, closure: { (whatever) in
+                  self.descriptionForEqualsOperation()
+                })
                 executePendingBinaryOperation()
-                if !operandTypedIn {
-                    addOperandToDescription(String(accumulator))
-                    operandTypedIn = true
-                }
+
             }
         }
     }
@@ -157,10 +161,15 @@ class CalculatorBrain{
         return returningOperand
     }
     
+    /* adds Operation to the description 
+     */
+    private func addOperationToDescription(symbol: String, closure: (String) -> ()){
+        closure(symbol);
+    }
 
     /* edit description for a unary operator according to is partial result and if an operand is typed in
      */
-    private func descriptionForUnaryOperator(symbol: String){
+    private func descriptionForUnaryOperation(symbol: String){
         if isPartialResult{
             //add the unary operator to the last operand put in
             description = description.substringWithRange(description.startIndex..<description.endIndex.predecessor()) +
@@ -175,6 +184,15 @@ class CalculatorBrain{
             else{
                 description = symbol + "(" + description + ")"
             }
+        }
+    }
+
+    /* returns description for EqualsOperation 
+     */
+    private func descriptionForEqualsOperation(){
+        if !operandTypedIn {
+            addOperandToDescription(String(accumulator))
+            operandTypedIn = true
         }
     }
 
