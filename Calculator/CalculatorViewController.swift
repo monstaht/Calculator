@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class CalculatorViewController: UIViewController, UISplitViewControllerDelegate {
     
     @IBOutlet weak private var display: UILabel!
     @IBOutlet weak var descriptionOfOperandsAndOperations: UILabel!
@@ -23,6 +23,11 @@ class ViewController: UIViewController {
         set{
             display.text = String(newValue);
         }
+    }
+    override func viewDidLoad() {
+        descriptionOfOperandsAndOperations.text = ""
+        splitViewController?.delegate =  self
+        navigationItem.title = "Calculator"
     }
     
     /* Calls private function below to display a digit on display
@@ -71,22 +76,74 @@ class ViewController: UIViewController {
             descriptionOfOperandsAndOperations.text = brain.returnDescription()
         }
         displayValue = brain.result
-    }
-    
-    @IBAction func save() {
-        brain.variableValues["M"] = displayValue
         savedProgram = brain.program
     }
     
-    
-    @IBAction func restore() {
-        if savedProgram != nil{
-            brain.setOperand("M")
+    @IBAction func undo() {
+        if userIsInTheMiddleOfTyping {
+            if display.text?.characters.count == 2{
+                userIsInTheMiddleOfTyping = false
+            }
+            display.text =
+                display.text?.substringToIndex((display.text?.endIndex.predecessor())!)
+        }
+        else{
+            brain.undo()
             displayValue = brain.result
+            descriptionOfOperandsAndOperations.text = brain.returnDescription()
+        }
+    }
+    
+    @IBAction func save() {
+        if savedProgram != nil {
+            brain.variableValues["M"] = displayValue
+            userIsInTheMiddleOfTyping = false
+            brain.program = savedProgram!
+            displayValue = brain.result
+            descriptionOfOperandsAndOperations.text = brain.returnDescription()
         }
     }
     
     
+    @IBAction func restore() {
+        brain.setOperand("M")
+        //savedProgram = brain.program
+        displayValue = brain.result
+        //descriptionOfOperandsAndOperations.text = brain.returnDescription()
+    }
+    
+    /* Performs segue by pressing the button and if it is not a partial result
+     */
+    
+    @IBAction func goToGraph() {
+        if !brain.isPartialResult{
+            performSegueWithIdentifier("Graph Segue", sender: nil)
+        }
+    }
+    
+    
+    /* Sends the brain and the program over
+     */
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if let graphvc = segue.destinationViewController.contentViewController as? GraphViewController {
+            graphvc.brain = brain
+            graphvc.program = savedProgram
+            
+        }
+    }
+    
+    
+    /* So the splitView will collapse the detail onto the master in the beginning also why SplitviewControllerDelegate is implemented
+     and why view did load has myself as a delegate
+     */
+    func splitViewController(splitViewController: UISplitViewController, collapseSecondaryViewController secondaryViewController: UIViewController, ontoPrimaryViewController primaryViewController: UIViewController) -> Bool {
+        if let graphvc = secondaryViewController.contentViewController as? GraphViewController {
+            if graphvc.graphingFunction == nil {
+                return true
+            }
+        }
+        return false
+    }
     
     /* This is the function which places a digit or decimal
         on the display. If userInTheMiddleOfTyping then add
@@ -103,9 +160,21 @@ class ViewController: UIViewController {
             userIsInTheMiddleOfTyping = true;
         }
     }
-    
+}
 
 
 
+/* An extension that will return the top view controller of a navigation controller or itself
+ */
+extension UIViewController {
+    var contentViewController: UIViewController {
+        get{
+            var contentvc = self
+            if let navcon  = self as? UINavigationController{
+                contentvc = navcon.topViewController ?? self
+            }
+            return contentvc
+        }
+    }
 }
 
